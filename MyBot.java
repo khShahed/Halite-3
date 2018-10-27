@@ -2,6 +2,7 @@
 //     Otherwise the names of methods are consistent.
 
 import hlt.*;
+import javafx.geometry.Pos;
 
 import java.util.*;
 
@@ -40,6 +41,7 @@ public class MyBot {
 
             final ArrayList<Command> commandQueue = new ArrayList<>();
             List<Direction> directionOrder = Arrays.asList(Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.STILL);
+            List<Position> positionChoices = new ArrayList<>();
             for (final Ship ship : me.ships.values()) {
                 ArrayList<Position> positonOptions = ship.position.getSurroundingCardinals();
                 positonOptions.add(ship.position);
@@ -61,7 +63,10 @@ public class MyBot {
                 for (Direction direction : positionDictionary.keySet()) {
                     Position position = positionDictionary.get(direction);
                     int halite = gameMap.at(position).halite;
-                    haliteDictionary.put(position, halite);
+                    if (!positionChoices.contains(position))
+                        haliteDictionary.put(position, halite);
+                    else
+                        Log.log("Attempting to move to same spot");
                 }
 
                 Integer maxHalite =
@@ -72,10 +77,11 @@ public class MyBot {
                 Position maxHalitePositon = getKeyByValue(haliteDictionary, maxHalite);
                 Direction maxHaliteDirection = getKeyByValue(positionDictionary, maxHalitePositon);
 
-
                 if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
+                    positionChoices.add(maxHalitePositon);
                     commandQueue.add(ship.move(maxHaliteDirection));
                 } else {
+                    positionChoices.add(positionDictionary.get(Direction.STILL));
                     commandQueue.add(ship.stayStill());
                 }
             }
