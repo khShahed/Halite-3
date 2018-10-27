@@ -3,10 +3,19 @@
 
 import hlt.*;
 
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 public class MyBot {
+
+    public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+        for (Map.Entry<T, E> entry : map.entrySet()) {
+            if (Objects.equals(value, entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     public static void main(final String[] args) {
         final long rngSeed;
         if (args.length > 1) {
@@ -30,11 +39,42 @@ public class MyBot {
             final GameMap gameMap = game.gameMap;
 
             final ArrayList<Command> commandQueue = new ArrayList<>();
-
+            List<Direction> directionOrder = Arrays.asList(Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.STILL);
             for (final Ship ship : me.ships.values()) {
+                ArrayList<Position> positonOptions = ship.position.getSurroundingCardinals();
+                positonOptions.add(ship.position);
+
+                // This HashMap will contains direction and position
+                // 'n': {19:38}
+                HashMap<Direction, Position> positionDictionary = new HashMap<>();
+
+                // This HashMap will contains Positions and Amount of halite in that position
+                // {0,1}: 500
+                HashMap<Position, Integer> haliteDictionary = new HashMap<>();
+
+                // Populate positionDictionary
+                for(Direction direction: directionOrder) {
+                    positionDictionary.put(direction, positonOptions.get(directionOrder.indexOf(direction)));
+                }
+
+                // Populate haliteDictionary with halite amount and position
+                for (Direction direction : positionDictionary.keySet()) {
+                    Position position = positionDictionary.get(direction);
+                    int halite = gameMap.at(position).halite;
+                    haliteDictionary.put(position, halite);
+                }
+
+                Integer maxHalite =
+                        haliteDictionary.values()
+                            .stream()
+                            .max((entry1, entry2) -> entry1 > entry2 ? 1 : -1)
+                            .get();
+                Position maxHalitePositon = getKeyByValue(haliteDictionary, maxHalite);
+                Direction maxHaliteDirection = getKeyByValue(positionDictionary, maxHalitePositon);
+
+
                 if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
-                    final Direction randomDirection = Direction.ALL_CARDINALS.get(rng.nextInt(4));
-                    commandQueue.add(ship.move(randomDirection));
+                    commandQueue.add(ship.move(maxHaliteDirection));
                 } else {
                     commandQueue.add(ship.stayStill());
                 }
