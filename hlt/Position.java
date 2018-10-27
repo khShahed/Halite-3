@@ -1,5 +1,7 @@
 package hlt;
 
+import java.util.ArrayList;
+
 public class Position {
     public final int x;
     public final int y;
@@ -9,7 +11,17 @@ public class Position {
         this.y = y;
     }
 
-    Position directionalOffset(final Direction d) {
+    public ArrayList<Position> getSurroundingCardinals() {
+        final ArrayList<Position> suroundingCardinals = new ArrayList<>();
+
+        for(final Direction d : Direction.ALL_CARDINALS) {
+            suroundingCardinals.add(directionalOffset(d));
+        }
+        
+        return suroundingCardinals;
+    }
+
+    public Position directionalOffset(final Direction d) {
         final int dx;
         final int dy;
 
