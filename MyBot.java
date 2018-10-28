@@ -33,7 +33,7 @@ public class MyBot {
         game.ready("MyJavaBot");
 
         Log.log("Successfully created bot! My Player ID is " + game.myId + ". Bot rng seed is " + rngSeed + ".");
-
+        HashMap<EntityId, String> shipsState = new HashMap<>();
         for (;;) {
             game.updateFrame();
             final Player me = game.me;
@@ -43,6 +43,11 @@ public class MyBot {
             List<Direction> directionOrder = Arrays.asList(Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.STILL);
             List<Position> positionChoices = new ArrayList<>();
             for (final Ship ship : me.ships.values()) {
+
+                if (!shipsState.containsKey(ship.id)){
+                    shipsState.put(ship.id, "collecting");
+                }
+
                 ArrayList<Position> positonOptions = ship.position.getSurroundingCardinals();
                 positonOptions.add(ship.position);
 
@@ -65,8 +70,6 @@ public class MyBot {
                     int halite = gameMap.at(position).halite;
                     if (!positionChoices.contains(position))
                         haliteDictionary.put(position, halite);
-                    else
-                        Log.log("Attempting to move to same spot");
                 }
 
                 Integer maxHalite =
@@ -77,12 +80,22 @@ public class MyBot {
                 Position maxHalitePositon = getKeyByValue(haliteDictionary, maxHalite);
                 Direction maxHaliteDirection = getKeyByValue(positionDictionary, maxHalitePositon);
 
-                if (gameMap.at(ship).halite < Constants.MAX_HALITE / 10 || ship.isFull()) {
+
+                if (shipsState.get(ship.id).equals("depositing")){
+                    Direction shipyardDirection = gameMap.naiveNavigate(ship, me.shipyard.position);
+                    Position position = positionDictionary.get(shipyardDirection);
+                    if (positionChoices.contains(position))
+                        position = positionDictionary.get(Direction.STILL);
+
+                    positionChoices.add(position);
+                    commandQueue.add(ship.move(shipyardDirection));
+                } else if (shipsState.get(ship.id).equals("collecting")) {
                     positionChoices.add(maxHalitePositon);
-                    commandQueue.add(ship.move(maxHaliteDirection));
-                } else {
-                    positionChoices.add(positionDictionary.get(Direction.STILL));
-                    commandQueue.add(ship.stayStill());
+                    commandQueue.add(ship.move(gameMap.naiveNavigate(ship, maxHalitePositon)));
+
+                    if (ship.halite > Constants.MAX_HALITE / 2) {
+                        shipsState.put(ship.id, "depositing");
+                    }
                 }
             }
 
