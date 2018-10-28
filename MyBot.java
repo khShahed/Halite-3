@@ -89,11 +89,15 @@ public class MyBot {
 
                     positionChoices.add(position);
                     commandQueue.add(ship.move(shipyardDirection));
+
+                    if (shipyardDirection == Direction.STILL && ship.position.equals(me.shipyard.position)) {
+                        shipsState.put(ship.id, "collecting");
+                    }
                 } else if (shipsState.get(ship.id).equals("collecting")) {
                     positionChoices.add(maxHalitePositon);
                     commandQueue.add(ship.move(gameMap.naiveNavigate(ship, maxHalitePositon)));
 
-                    if (ship.halite > Constants.MAX_HALITE / 2) {
+                    if (ship.halite > Constants.MAX_HALITE * 0.95) {
                         shipsState.put(ship.id, "depositing");
                     }
                 }
